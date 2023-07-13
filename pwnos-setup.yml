@@ -1,0 +1,266 @@
+---
+- name: pwnOS setup
+  become_method: sudo
+  become: yes
+  hosts: localhost
+  tasks:
+    - name: Remove archinstall logs 
+      ansible.builtin.file:
+        path: /var/log/archinstall
+        state: absent
+
+    - name: Update and upgrade Arch
+      pacman:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Install the base required packages
+      pacman:
+        name:
+          - base-devel
+
+    - name: Create the `aur_builder` user
+      ansible.builtin.user:
+        name: aur_builder
+        create_home: yes
+        group: wheel
+
+    - name: Allow the `aur_builder` user to run `sudo pacman` without a password
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/11-install-aur_builder
+        line: 'aur_builder ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+        create: yes
+        validate: 'visudo -cf %s'
+
+    - name: Install paru using makepkg if it isn't installed already
+      kewlfft.aur.aur:
+        name: paru
+        use: makepkg
+        state: present
+      become_user: aur_builder
+
+    - name: Install various packages
+      pacman:
+        name:
+          - ttf-joypixels
+          - fish
+          - helix
+          - bat
+          - lsd
+          - ripgrep
+          - rsync
+          - greetd
+          - rofi
+          - autorandr
+          - xorg-xinit
+          - xorg-server
+          - feh
+          - qemu-guest-agent
+          - spice-vdagent
+          - greetd-tuigreet
+          - chrony
+          - fisher
+          - i3
+          - go
+          - alacritty
+          - gopls
+          - tmux
+          - man-db
+          - man-pages
+          - openbsd-netcat
+          - ghidra
+          - whois
+          - nodejs-lts-hydrogen
+          - docker
+          - docker-compose
+          - unzip
+          - ropr
+          - qemu-full
+          - qemu-user-static
+          - qemu-user-static-binfmt
+          # Nerd fonts
+          - otf-aurulent-nerd
+          - otf-codenewroman-nerd
+          - otf-comicshanns-nerd
+          - otf-droid-nerd
+          - otf-firamono-nerd
+          - otf-hasklig-nerd
+          - otf-hermit-nerd
+          - otf-opendyslexic-nerd
+          - otf-overpass-nerd
+          - ttf-3270-nerd
+          - ttf-agave-nerd
+          - ttf-anonymouspro-nerd
+          - ttf-arimo-nerd
+          - ttf-bigblueterminal-nerd
+          - ttf-bitstream-vera-mono-nerd
+          - ttf-cascadia-code-nerd
+          - ttf-cousine-nerd
+          - ttf-daddytime-mono-nerd
+          - ttf-dejavu-nerd
+          - ttf-fantasque-nerd
+          - ttf-firacode-nerd
+          - ttf-go-nerd
+          - ttf-hack-nerd
+          - ttf-heavydata-nerd
+          - ttf-iawriter-nerd
+          - ttf-ibmplex-mono-nerd
+          - ttf-inconsolata-go-nerd
+          - ttf-inconsolata-lgc-nerd
+          - ttf-inconsolata-nerd
+          - ttf-iosevka-nerd
+          - ttf-iosevkaterm-nerd
+          - ttf-jetbrains-mono-nerd
+          - ttf-lekton-nerd
+          - ttf-liberation-mono-nerd
+          - ttf-lilex-nerd
+          - ttf-meslo-nerd
+          - ttf-monofur-nerd
+          - ttf-monoid-nerd
+          - ttf-mononoki-nerd
+          - ttf-mplus-nerd
+          - ttf-noto-nerd
+          - ttf-profont-nerd
+          - ttf-proggyclean-nerd
+          - ttf-roboto-mono-nerd
+          - ttf-sharetech-mono-nerd
+          - ttf-sourcecodepro-nerd
+          - ttf-space-mono-nerd
+          - ttf-terminus-nerd
+          - ttf-tinos-nerd
+          - ttf-ubuntu-mono-nerd
+          - ttf-ubuntu-nerd
+          - ttf-victor-mono-nerd
+
+    - name: Install packages from AUR
+      kewlfft.aur.aur:
+        use: paru
+        aur_only: yes
+        # TODO: check if needed
+        extra_args: "--noprovides"
+        name:
+          - networkmanager-dispatcher-chrony
+          - gdb-multiarch
+          - ghidra-desktop
+      become_user: aur_builder
+
+    - name: Copy the .config folder
+      ansible.builtin.copy:
+        # Use trailing slash to copy only the content of the folder.
+        src: ./home/kriive/.config/
+        dest: /home/kriive/.config
+        mode: 0744
+        directory_mode: 0700
+        owner: "kriive"
+        group: "kriive"
+
+    - name: Copy the greetd folder to /etc
+      ansible.builtin.copy:
+        src: ./etc/greetd/
+        dest: /etc/greetd
+        mode: 0644
+        directory_mode: 0755
+        owner: "root"
+        group: "root"
+
+    - name: Copy the .xinitrc file to /home/kriive
+      ansible.builtin.copy:
+        src: ./home/kriive/.xinitrc
+        dest: /home/kriive/.xinitrc
+        mode: 0644
+        owner: "kriive"
+        group: "kriive"
+
+    - name: Copy chrony.conf to /etc/chrony.conf
+      ansible.builtin.copy:
+        src: ./etc/chrony.conf
+        dest: /etc/chrony.conf
+        mode: 0644
+        directory_mode: 0755
+        owner: "root"
+        group: "root"
+
+    - name: Copy usr/local/bin to /usr/local/bin
+      ansible.builtin.copy:
+        src: ./usr/local/bin
+        dest: /usr/local/bin
+        mode: 0644
+        directory_mode: 0755
+        owner: "root"
+        group: "root"
+
+    - name: Copy resolved.conf to /etc/systemd/resolved.conf
+      ansible.builtin.copy:
+        src: ./etc/systemd/resolved.conf
+        dest: /etc/systemd/resolved.conf
+        mode: 0644
+        directory_mode: 0755
+        owner: "root"
+        group: "root"
+
+    - name: Enable greetd.service
+      ansible.builtin.systemd:
+        name: greetd
+        enabled: yes
+    
+    - name: Disable and stop systemd-timesyncd.service
+      ansible.builtin.systemd:
+        name: systemd-timesyncd
+        state: stopped
+        enabled: no
+
+    - name: Enable and start chronyd.service
+      ansible.builtin.systemd:
+        name: chronyd
+        enabled: yes
+        state: started
+
+    - name: Enable and start spice-vdagentd.service
+      ansible.builtin.systemd:
+        name: spice-vdagentd
+        enabled: yes
+        state: started
+
+    - name: Enable and start spice-vdagent user service
+      ansible.builtin.systemd:
+        name: spice-vdagent
+        enabled: yes
+        state: started
+        scope: "user"
+      become_user: kriive
+
+    - name: Enable and start systemd-resolved.service
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        enabled: yes
+        state: started
+
+    - name: Enable and start qemu-guest-agent.service
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: yes
+        state: started
+
+    - name: Remove /etc/resolv.conf
+      ansible.builtin.file:
+        path: /etc/resolv.conf
+        state: absent
+  
+    - name: Create a symbolic link to /etc/resolv.conf
+      ansible.builtin.file:
+        src: /run/systemd/resolve/stub-resolv.conf
+        dest: /etc/resolv.conf
+        owner: root
+        group: root
+        state: link
+
+    - name: Remove the user 'aur_builder'
+      ansible.builtin.user:
+        name: aur_builder
+        state: absent
+        remove: yes
+
+    - name: Remove sudoer file for aur_builder
+      ansible.builtin.file:
+        path: /etc/sudoers.d/11-install-aur_builder
+        state: absent
