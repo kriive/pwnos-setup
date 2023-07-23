@@ -1,0 +1,11 @@
+<domain xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0" type="kvm"> 
+  <devices>
+    // ...
+  </devices>
+  <qemu:commandline>
+    <qemu:arg value="-netdev"/>
+    <qemu:arg value="user,id=net0,net=10.0.10.0/24,hostfwd=tcp::22222-:22"/>
+    <qemu:arg value="-device"/>
+    <qemu:arg value="e1000,netdev=net0,bus=pcie.0,addr=0x10"/>
+  </qemu:commandline>
+</domain>
