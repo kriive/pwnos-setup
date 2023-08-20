@@ -142,7 +142,7 @@
         extra_args: "--noprovides"
         name:
           - networkmanager-dispatcher-chrony
-          - gdb-multiarch
+          # - gdb-multiarch
           - ghidra-desktop
       become_user: aur_builder
 
@@ -184,9 +184,9 @@
 
     - name: Copy usr/local/bin to /usr/local/bin
       ansible.builtin.copy:
-        src: ./usr/local/bin
-        dest: /usr/local/bin
-        mode: 0644
+        src: ./usr/local/bin/
+        dest: /usr/local/bin/
+        mode: 0655
         directory_mode: 0755
         owner: "root"
         group: "root"

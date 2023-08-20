@@ -1,3 +1,3 @@
 #!/bin/bash
 
-feh --bg-fill .config/wallpaper/libc.png
+feh --bg-fill /home/kriive/.config/wallpaper/libc.png
